@@ -466,7 +466,10 @@ async function processCardPayment(data) {
 
         console.log('📡 Status da resposta:', response.status);
 
-        const result = await response.json();
+        {
+            const ct = response.headers.get('content-type') || '';
+            var result = ct.includes('application/json') ? await response.json() : JSON.parse(await response.text());
+        }
 
         console.log('📦 Resposta do pagamento:', result);
 
@@ -527,7 +530,10 @@ function initializePixActions() {
                     })
                 });
 
-                const result = await response.json();
+                {
+                    const ct = response.headers.get('content-type') || '';
+                    var result = ct.includes('application/json') ? await response.json() : JSON.parse(await response.text());
+                }
 
                 console.log('Status do pagamento:', result);
 
@@ -593,7 +599,10 @@ function startPaymentPolling() {
                 })
             });
 
-            const result = await response.json();
+            {
+                const ct = response.headers.get('content-type') || '';
+                var result = ct.includes('application/json') ? await response.json() : JSON.parse(await response.text());
+            }
 
             if (result.success && result.data) {
                 const status = result.data.status || result.data.paymentStatus;
@@ -704,11 +713,28 @@ function initializeFormMonitoring() {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Erro ao gerar PIX');
+                const ctErr = response.headers.get('content-type') || '';
+                if (ctErr.includes('application/json')) {
+                    const error = await response.json();
+                    throw new Error(error.message || error.error || 'Erro ao gerar PIX');
+                } else {
+                    const text = await response.text();
+                    throw new Error(text || 'Erro ao gerar PIX');
+                }
             }
 
-            const result = await response.json();
+            const ct = response.headers.get('content-type') || '';
+            let result;
+            if (ct.includes('application/json')) {
+                result = await response.json();
+            } else {
+                const text = await response.text();
+                try {
+                    result = JSON.parse(text);
+                } catch {
+                    throw new Error(text || 'Resposta inválida da API');
+                }
+            }
             pixPaymentData = result.data;
 
             console.log('📦 Resposta completa do servidor:', result);
@@ -956,4 +982,3 @@ function removeLoadingState(button) {
 
 // Inicializa valores de preço fixo
 window.currentProductPrice = 29.90;
-

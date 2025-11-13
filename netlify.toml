@@ -1,0 +1,14 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/generate-pix"
+  to = "/.netlify/functions/generate-pix"
+  status = 200
+
+[[redirects]]
+  from = "/check-payment"
+  to = "/.netlify/functions/check-payment"
+  status = 200
+
